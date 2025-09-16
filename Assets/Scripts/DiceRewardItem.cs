@@ -6,12 +6,15 @@ public class DiceRewardItem : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI tmp_reward;
     [SerializeField] private Outline _outline;
-    public int amount { get; private set; }
+    [SerializeField] private Image _icon;
 
-    public void SetRewardAmount(int value)
+    public DiceReward reward { get; private set; }
+
+    public void SetReward(DiceReward newReward)
     {
-        tmp_reward.SetText($"{value}");
-        amount = value;
+        reward = newReward;
+        tmp_reward.SetText($"{reward.amount}");
+        _icon.sprite = newReward.icon;
     }
 
     public void SetHighlight(bool value) => _outline.enabled = value;

@@ -7,13 +7,17 @@ public class PlayerManager : MonoBehaviour
 {
     public static PlayerManager Instance { get; private set; }
 
-    public static event Action<ResourceType, int> OnResourceUpdated;
-    public static event Action<ResourceType, int> OnRechargeTimeUpdated;
+    public static event Action OnGoldUpdated;
+    public static event Action OnShieldsUpdated;
+    public static event Action<int> OnDiceRechargeTimeUpdated;
+    public static event Action OnDiceRollUpdated;
+    public static event Action OnBuildingsUpdated;
 
     private Dictionary<ResourceType, Resource> _resources;
+    private Dictionary<BuildingType, int> _buildings;
 
     private bool _isLoggedIn;
-    public Dictionary<ResourceType, int> resourceRechargeTimeRemaining {  get; private set; }
+    public int diceRechargeTimeRemaining {  get; private set; }
 
     private void Awake()
     {
@@ -22,6 +26,7 @@ public class PlayerManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
             InitializeResources();
+            InitializeBuildings();
         }
         else
         {
@@ -33,57 +38,33 @@ public class PlayerManager : MonoBehaviour
     {
         _isLoggedIn = value;
 
-        if (_isLoggedIn)
-            StartResourceRecharge();
+        //if (_isLoggedIn)
+        //    StartResourceRecharge();
     }
 
     public void StartResourceRecharge()
     {
-        resourceRechargeTimeRemaining[ResourceType.Energy] = 10;
-        resourceRechargeTimeRemaining[ResourceType.DiceRoll] = 30;
+        if (!_isLoggedIn)
+            return;
+        diceRechargeTimeRemaining = 10;
         StartCoroutine(RechargeResourceLoop());
     }
 
     IEnumerator RechargeResourceLoop()
     {
-        while (_isLoggedIn)
+        while (_isLoggedIn && GetResource(ResourceType.DiceRoll) < 100)
         {
             yield return new WaitForSeconds(1f);
-            resourceRechargeTimeRemaining[ResourceType.Energy]--;
-            resourceRechargeTimeRemaining[ResourceType.DiceRoll]--;
-
-            if (resourceRechargeTimeRemaining[ResourceType.Energy] <= 0)
-            {                
-                AddResource(ResourceType.Energy, 1);
-                ResetResourceRechargeTimer(ResourceType.Energy);
-            }
-
-            if (resourceRechargeTimeRemaining.ContainsKey(ResourceType.DiceRoll))
+            diceRechargeTimeRemaining--;
+            if (diceRechargeTimeRemaining <= 0)
             {
+                diceRechargeTimeRemaining = 10;
                 AddResource(ResourceType.DiceRoll, 1);
-                ResetResourceRechargeTimer(ResourceType.DiceRoll);
+                OnDiceRollUpdated?.Invoke();
             }
-            OnRechargeTimeUpdated?.Invoke(ResourceType.DiceRoll, resourceRechargeTimeRemaining[ResourceType.DiceRoll]);
-            OnRechargeTimeUpdated?.Invoke(ResourceType.Energy, resourceRechargeTimeRemaining[ResourceType.Energy]);
+            OnDiceRechargeTimeUpdated?.Invoke(diceRechargeTimeRemaining);
         }
         Debug.Log("Player logged out, loop stopped");
-    }
-
-    void ResetResourceRechargeTimer(ResourceType type)
-    {
-        switch(type)
-        {
-            case ResourceType.Energy:
-                resourceRechargeTimeRemaining[ResourceType.Energy] = 10;
-                break;
-
-                case ResourceType.DiceRoll:
-                resourceRechargeTimeRemaining[ResourceType.DiceRoll] = 30;
-                break;
-            default:
-                Debug.Log("Resource not found!");
-                break;
-        }
     }
 
     private void InitializeResources()
@@ -91,13 +72,31 @@ public class PlayerManager : MonoBehaviour
         _resources = new Dictionary<ResourceType, Resource>
         {
             { ResourceType.Gold,        new Resource(ResourceType.Gold, 100) },
-            { ResourceType.DiceRoll,    new Resource(ResourceType.DiceRoll) },
+            { ResourceType.DiceRoll,    new Resource(ResourceType.DiceRoll, 3) },
             { ResourceType.AttackToken, new Resource(ResourceType.AttackToken) },
             { ResourceType.Shield,      new Resource(ResourceType.Shield) },
             { ResourceType.Energy,      new Resource(ResourceType.Energy) }
         };
-        ResetResourceRechargeTimer(ResourceType.Energy);
-        ResetResourceRechargeTimer(ResourceType.DiceRoll);
+    }
+
+    private void InitializeBuildings()
+    {
+        _buildings = new Dictionary<BuildingType, int>
+        {
+            { BuildingType.Gym, 0},
+            { BuildingType.Arena, 0},
+        };
+    }
+
+    public int GetBuilding(BuildingType buildingType)
+    {
+        return _buildings[buildingType];
+    }
+
+    public void UpdateBuildingLevel(BuildingType buildingType, int newLevel)
+    {
+        _buildings[buildingType] = newLevel;
+        OnBuildingsUpdated?.Invoke();
     }
 
     public int GetResource(ResourceType type)
@@ -106,21 +105,49 @@ public class PlayerManager : MonoBehaviour
     }
 
     public void AddResource(ResourceType type, int amount)
-    {
+    {        
         _resources[type].Amount += amount;
-        OnResourceUpdated?.Invoke(type, _resources[type].Amount);
+
+        if (type == ResourceType.Shield && _resources[type].Amount > 3)
+            _resources[type].Amount = 3;
+
+        switch (type)
+        {
+            case ResourceType.Gold:
+                OnGoldUpdated?.Invoke();
+                break;
+
+            case ResourceType.DiceRoll:
+                OnDiceRollUpdated?.Invoke();
+                break;
+
+            case ResourceType.Shield:
+                OnShieldsUpdated?.Invoke();
+                break;
+        }
     }
 
     public bool SpendResource(ResourceType type, int amount)
     {
         if (_resources[type].Amount < amount)
         {
-            Debug.Log($"Not enough {type} to spend. Needed {amount}, have {_resources[type].Amount}.");
+            NotificationManager.Instance.ShowMessage($"Not enough {type}, you need {amount - _resources[type].Amount} more");
+            //Debug.Log($"Not enough {type} to spend. Needed {amount}, have {_resources[type].Amount}.");
             return false;
         }
 
         _resources[type].Amount -= amount;
-        OnResourceUpdated?.Invoke(type, _resources[type].Amount);
+
+        switch(type)
+        {
+            case ResourceType.Gold:
+                OnGoldUpdated?.Invoke();
+                break;
+
+            case ResourceType.DiceRoll:
+                OnDiceRollUpdated?.Invoke();
+                break;
+        }
         return true;
     }
 }

@@ -1,28 +1,25 @@
-using System.Collections;
 using UnityEngine;
 
 public class DiceRoll : MonoBehaviour
 {
     private Rigidbody rb;
     private bool hasLanded = false;
-    private Vector3 initPosition;
-    private bool _initiated = false;
+    private MainSceneHandler _handler;
+    public int rollResult;
 
-    void Start()
+    void Awake()
     {
-        rb = GetComponent<Rigidbody>();
-        initPosition = transform.position;        
+        rb = GetComponent<Rigidbody>();   
     }
 
-    public void RollDice()
+    public void Roll(MainSceneHandler handler)
     {
+        _handler = handler;
         hasLanded = false;
-        transform.position = initPosition + new Vector3(0, 2, 0); // reset above ground
         transform.rotation = Random.rotation;
         rb.velocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
 
-        rb.AddForce(Vector3.up * Random.Range(100, 300));
         rb.AddTorque(Random.onUnitSphere * Random.Range(500, 1000));
     }
 
@@ -30,34 +27,11 @@ public class DiceRoll : MonoBehaviour
     {
         if (!hasLanded && rb.IsSleeping())
         {
-            if (!_initiated)
-                return;
-
             hasLanded = true;
             int value = GetDiceValue();
-            GameSceneHandler.OnDiceRolled?.Invoke(value);
-            StartCoroutine(ResetPosition());
+            rollResult = value;
+            _handler.RollFinished(this);
         }
-    }
-
-    private void OnMouseDown()
-    {
-        if (!hasLanded && _initiated)
-            return;
-
-        rb.useGravity = true;
-        _initiated = true;
-
-        RollDice();
-    }
-
-    IEnumerator ResetPosition()
-    {
-        yield return new WaitForSeconds(1f);
-        transform.position = initPosition;
-        rb.velocity = Vector3.zero;
-        rb.angularVelocity = Vector3.zero;
-        rb.useGravity = false;
     }
 
     int GetDiceValue()

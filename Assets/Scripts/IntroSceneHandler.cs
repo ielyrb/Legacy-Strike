@@ -24,8 +24,9 @@ public class IntroSceneHandler : MonoBehaviour
         if (!isLoggedIn)
             return;
 
+        PlayerManager.Instance.ChangeLoggedInState(true);
         startGameBtn.interactable = false;
-        LoadingScreenManager.Instance.LoadScene("Locker");
+        LoadingScreenManager.Instance.LoadScene("Main");
     }
 
     void UpdateButtonsUI()
