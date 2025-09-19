@@ -31,8 +31,8 @@ public class MainSceneHandler : MonoBehaviour
 
     private void Awake()
     {
-        PlayerManager.OnDiceRechargeTimeUpdated += OnDiceRechargeTimeUpdated;
-        PlayerManager.OnDiceRollUpdated += OnDiceRollUpdated;
+        PlayerManager.OnStaminaRechargeTimeUpdated += OnStaminaRechargeTimeUpdated;
+        PlayerManager.OnStaminaUpdated += OnStaminaUpdated;
         PlayerManager.OnGoldUpdated += OnGoldUpdated;
         PlayerManager.OnShieldsUpdated += OnShieldsUpdated;
         ChangeCameraState(true);
@@ -41,11 +41,16 @@ public class MainSceneHandler : MonoBehaviour
     {
         PlayerManager.Instance.StartResourceRecharge();
         OnGoldUpdated();
-        OnDiceRollUpdated();
+        OnStaminaUpdated();
         OnShieldsUpdated();
     }
 
     #region Public Methods
+
+    public void StartRandomFight()
+    {
+        LoadingScreenManager.Instance.LoadScene("Battle");
+    }
 
     public void UpgradeBuildings()
     {
@@ -69,7 +74,7 @@ public class MainSceneHandler : MonoBehaviour
         if (_isRollingDice)
             return;
 
-        if (PlayerManager.Instance.GetResource(ResourceType.DiceRoll) < 1)
+        if (PlayerManager.Instance.GetResource(ResourceType.Stamina) < 1)
             return;
 
         ChangeUIState(true);
@@ -93,6 +98,12 @@ public class MainSceneHandler : MonoBehaviour
 
     #region Private Methods
 
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+            StartRandomFight();
+    }
+
     private void ChangeUIState(bool useDiceUI)
     {
         _diceUI.SetActive(useDiceUI);
@@ -108,20 +119,8 @@ public class MainSceneHandler : MonoBehaviour
 
     private void CheckReward()
     {
-        //if 3 dice roll same value, x2 reward
-        //if 2 dice roll same value
-        //6 = Free 10 rolls
-        //5 = Jackpot
-        //4 = Random Card
-        //3 = Shield
-        //2 = Attack
-        //1 = Steal
-
-        //if one no same value
-        //100 gold x amount of the dice,
-        //example 1,4,5
-        //100x1 + 100x4 + 100x5 gold
-        //reward = 1000 gold
+        //if one no matches
+        //100 gold x total value of the dice
 
         int d1 = _rollResults[0];
         int d2 = _rollResults[1];
@@ -138,15 +137,27 @@ public class MainSceneHandler : MonoBehaviour
         if (counts.ContainsValue(3))
         {
             int face = d1;
-            _rewardPreview.ShowReward(GetReward(face), 2);
+
+            int amount = 2;
+            RewardType reward = GetReward(face);
+
+            if (reward == RewardType.Gold)
+                amount = Random.Range(2500, 10000);
+
+            _rewardPreview.ShowReward(reward, amount);
             return;
         }
 
         if (counts.ContainsValue(2))
         {
             int face = counts.First(x => x.Value == 2).Key;
+            int amount = 1;
             RewardType reward = GetReward(face);
-            _rewardPreview.ShowReward(GetReward(face));
+
+            if(reward == RewardType.Gold)
+                amount = Random.Range(5000, 20000);
+
+            _rewardPreview.ShowReward(reward, amount);
             return;
         }
 
@@ -161,12 +172,12 @@ public class MainSceneHandler : MonoBehaviour
     {
         switch (face)
         {
-            case 6: return RewardType.FreeRolls;
-            case 5: return RewardType.Jackpot;
-            case 4: return RewardType.Random;
-            case 3: return RewardType.Shield;
-            case 2: return RewardType.Attack;
-            case 1: return RewardType.Steal;
+            case 6: return RewardType.Attack;
+            case 5: return RewardType.Arena;
+            case 4: return RewardType.Shield;
+            case 3: return RewardType.Gym;
+            case 2: return RewardType.Gloves;
+            case 1: return RewardType.Gold;
             default: return RewardType.Gold;
         }
     }
@@ -181,7 +192,7 @@ public class MainSceneHandler : MonoBehaviour
             yield return new WaitForSeconds(0.6f); //Wait for camera transition so it doesn't look weird
         }
 
-        PlayerManager.Instance.SpendResource(ResourceType.DiceRoll, 1);
+        PlayerManager.Instance.SpendResource(ResourceType.Stamina, 1);
         _isRollingDice = true;
         _rollResults.Clear();
         _dice.Clear();
@@ -206,7 +217,7 @@ public class MainSceneHandler : MonoBehaviour
 
     #region Event Callbacks
 
-    void OnDiceRechargeTimeUpdated(int newValue)
+    void OnStaminaRechargeTimeUpdated(int newValue)
     {
         int minutes = newValue / 60;
         int seconds = newValue % 60;
@@ -224,9 +235,9 @@ public class MainSceneHandler : MonoBehaviour
         }
     }
 
-    void OnDiceRollUpdated()
+    public void OnStaminaUpdated()
     {
-        tmp_diceRoll.SetText($"{PlayerManager.Instance.GetResource(ResourceType.DiceRoll)}/100");
+        tmp_diceRoll.SetText($"{PlayerManager.Instance.GetResource(ResourceType.Stamina)}/{PlayerManager.Instance.maxStamina}");
     }
 
     void OnGoldUpdated()

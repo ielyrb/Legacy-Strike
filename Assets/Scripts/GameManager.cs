@@ -1,10 +1,13 @@
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
+
+    public GameSettings settings;
+
+    public Stats attacker;
+    public Stats defender;
 
     private void Awake()
     {
@@ -15,5 +18,11 @@ public class GameManager : MonoBehaviour
         }
         else
             Destroy(gameObject);
+    }
+
+    void Start()
+    {
+        attacker = PlayerManager.Instance._playerStats;
+        defender = new Stats();
     }
 }

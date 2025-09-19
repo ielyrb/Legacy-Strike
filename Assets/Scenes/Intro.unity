@@ -1442,6 +1442,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b485272aefe12e54489ce41609ddbc75, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  staminaRechargeTime: 0
 --- !u!4 &671158192
 Transform:
   m_ObjectHideFlags: 0
@@ -1501,6 +1502,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76492c98a0c6e3f4f980b850d7850f15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  settings: {fileID: 11400000, guid: 5907e1cc7ce6c724280a1f84800734bb, type: 2}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0

@@ -13,6 +13,13 @@ public class BuildingItem : MonoBehaviour
     [SerializeField] private List<GameObject> _crowns;
     [SerializeField] private TextMeshProUGUI _costText;
 
+    StructureBuildingHandler _handler;
+
+    private void Awake()
+    {
+        _handler = FindObjectOfType<StructureBuildingHandler>();
+    }
+
     private void Start()
     {
         Initialize(PlayerManager.Instance.GetBuilding(_type));
@@ -54,9 +61,10 @@ public class BuildingItem : MonoBehaviour
         if(PlayerManager.Instance.SpendResource(ResourceType.Gold, upgradeCost))
         {            
             level++;
-            upgradeCost = _upgradeCostList[level];
+            string message = $"Upgrade completed! Your {_type} is now level {level}";
             PlayerManager.Instance.UpdateBuildingLevel(_type, level);
-            NotificationManager.Instance.ShowMessage($"Upgrade completed! Your {_type} is now level {level}");
+            _handler.UpgradeBuilding(_type, level, message);
+            upgradeCost = _upgradeCostList[Mathf.Min(4,level)];
             UpdateUI();
         }
     }

@@ -9,15 +9,23 @@ public class PlayerManager : MonoBehaviour
 
     public static event Action OnGoldUpdated;
     public static event Action OnShieldsUpdated;
-    public static event Action<int> OnDiceRechargeTimeUpdated;
-    public static event Action OnDiceRollUpdated;
+    public static event Action<int> OnStaminaRechargeTimeUpdated;
+    public static event Action OnStaminaUpdated;
     public static event Action OnBuildingsUpdated;
 
     private Dictionary<ResourceType, Resource> _resources;
     private Dictionary<BuildingType, int> _buildings;
+    public Stats _basePlayerStats { get; private set; } = new Stats();
+    public Stats _playerStats { get; private set; } = new Stats();
 
     private bool _isLoggedIn;
-    public int diceRechargeTimeRemaining {  get; private set; }
+    private bool _rechargingStamina;
+    public int staminaRechargeTime;
+    public int staminaRechargeTimeRemaining {  get; private set; }
+    public int maxStamina {  get; private set; }
+    public int winMultiplier { get; private set; }
+    
+
 
     private void Awake()
     {
@@ -25,13 +33,16 @@ public class PlayerManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            InitializeResources();
-            InitializeBuildings();
         }
         else
-        {
             Destroy(gameObject);
-        }
+    }
+
+    private void Start()
+    {
+        InitializeResources();
+        InitializeBuildings();
+        FinalizeStats();
     }
 
     public void ChangeLoggedInState(bool value)
@@ -46,36 +57,40 @@ public class PlayerManager : MonoBehaviour
     {
         if (!_isLoggedIn)
             return;
-        diceRechargeTimeRemaining = 10;
+
+        if (_rechargingStamina)
+            return;
+
+        _rechargingStamina = true;
+        staminaRechargeTimeRemaining = staminaRechargeTime;
         StartCoroutine(RechargeResourceLoop());
     }
 
     IEnumerator RechargeResourceLoop()
     {
-        while (_isLoggedIn && GetResource(ResourceType.DiceRoll) < 100)
+        while (_isLoggedIn && GetResource(ResourceType.Stamina) < maxStamina)
         {
             yield return new WaitForSeconds(1f);
-            diceRechargeTimeRemaining--;
-            if (diceRechargeTimeRemaining <= 0)
+            staminaRechargeTimeRemaining--;
+            if (staminaRechargeTimeRemaining <= 0)
             {
-                diceRechargeTimeRemaining = 10;
-                AddResource(ResourceType.DiceRoll, 1);
-                OnDiceRollUpdated?.Invoke();
+                staminaRechargeTimeRemaining = staminaRechargeTime;
+                AddResource(ResourceType.Stamina, GameManager.Instance.settings.staminaRechargeAmount);
+                OnStaminaUpdated?.Invoke();
             }
-            OnDiceRechargeTimeUpdated?.Invoke(diceRechargeTimeRemaining);
+            OnStaminaRechargeTimeUpdated?.Invoke(staminaRechargeTimeRemaining);
         }
-        Debug.Log("Player logged out, loop stopped");
+        _rechargingStamina = false;
     }
 
     private void InitializeResources()
     {
         _resources = new Dictionary<ResourceType, Resource>
         {
-            { ResourceType.Gold,        new Resource(ResourceType.Gold, 100) },
-            { ResourceType.DiceRoll,    new Resource(ResourceType.DiceRoll, 3) },
-            { ResourceType.AttackToken, new Resource(ResourceType.AttackToken) },
-            { ResourceType.Shield,      new Resource(ResourceType.Shield) },
-            { ResourceType.Energy,      new Resource(ResourceType.Energy) }
+            { ResourceType.Gold,        new Resource(ResourceType.Gold, 0) },
+            { ResourceType.Stamina,    new Resource(ResourceType.Stamina, 5) },
+            { ResourceType.AttackToken, new Resource(ResourceType.AttackToken, 0) },
+            { ResourceType.Shield,      new Resource(ResourceType.Shield, 0) }
         };
     }
 
@@ -88,6 +103,15 @@ public class PlayerManager : MonoBehaviour
         };
     }
 
+    private void FinalizeStats()
+    {
+        maxStamina = GameManager.Instance.settings.baseStamina + (GetBuilding(BuildingType.Gym) * GameManager.Instance.settings.gymStaminaMultiplier);
+        staminaRechargeTime = GameManager.Instance.settings.baseStaminaRechargeTime - (GetBuilding(BuildingType.Gym) * GameManager.Instance.settings.gymRechargeTimeMultiplier);
+        _playerStats.attack = _basePlayerStats.attack + (GetBuilding(BuildingType.Arena) * GameManager.Instance.settings.arenaAttackMultiplier);
+        _playerStats.defense = _basePlayerStats.defense + (GetBuilding(BuildingType.Arena) * GameManager.Instance.settings.arenaDefenseMultiplier);
+        winMultiplier = GetBuilding(BuildingType.Arena) == 0 ? 1 : GetBuilding(BuildingType.Arena) * GameManager.Instance.settings.arenaWinMultiplier;
+    }
+
     public int GetBuilding(BuildingType buildingType)
     {
         return _buildings[buildingType];
@@ -97,6 +121,7 @@ public class PlayerManager : MonoBehaviour
     {
         _buildings[buildingType] = newLevel;
         OnBuildingsUpdated?.Invoke();
+        FinalizeStats();
     }
 
     public int GetResource(ResourceType type)
@@ -105,7 +130,7 @@ public class PlayerManager : MonoBehaviour
     }
 
     public void AddResource(ResourceType type, int amount)
-    {        
+    {
         _resources[type].Amount += amount;
 
         if (type == ResourceType.Shield && _resources[type].Amount > 3)
@@ -117,8 +142,8 @@ public class PlayerManager : MonoBehaviour
                 OnGoldUpdated?.Invoke();
                 break;
 
-            case ResourceType.DiceRoll:
-                OnDiceRollUpdated?.Invoke();
+            case ResourceType.Stamina:
+                OnStaminaUpdated?.Invoke();
                 break;
 
             case ResourceType.Shield:
@@ -132,7 +157,6 @@ public class PlayerManager : MonoBehaviour
         if (_resources[type].Amount < amount)
         {
             NotificationManager.Instance.ShowMessage($"Not enough {type}, you need {amount - _resources[type].Amount} more");
-            //Debug.Log($"Not enough {type} to spend. Needed {amount}, have {_resources[type].Amount}.");
             return false;
         }
 
@@ -144,8 +168,12 @@ public class PlayerManager : MonoBehaviour
                 OnGoldUpdated?.Invoke();
                 break;
 
-            case ResourceType.DiceRoll:
-                OnDiceRollUpdated?.Invoke();
+            case ResourceType.Stamina:
+                OnStaminaUpdated?.Invoke();
+
+                if (GetResource(ResourceType.Stamina) < maxStamina)
+                    StartResourceRecharge();
+
                 break;
         }
         return true;
@@ -168,8 +196,13 @@ public class Resource
 public enum ResourceType
 {
     Gold,
-    DiceRoll,
+    Stamina,
     AttackToken,
-    Shield,
-    Energy
+    Shield
+}
+
+public class Stats
+{
+    public int attack = 1;
+    public int defense = 1;
 }

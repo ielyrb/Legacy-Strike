@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: adb1f784d4f676a4f8f3941257833b0a, type: 3}
   m_Name: Game Settings
   m_EditorClassIdentifier: 
-  maxRolls: 50
+  maxRolls: 20
   rollRechargeAmount: 5
-  rollRechargeTime: 600
+  rollRechargeTime: 60
