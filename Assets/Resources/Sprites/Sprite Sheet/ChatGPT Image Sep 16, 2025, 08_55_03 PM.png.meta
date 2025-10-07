@@ -136,7 +136,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Gloves
+      name: Stamina
       rect:
         serializedVersion: 2
         x: 216
@@ -276,10 +276,10 @@ TextureImporter:
       Attack: -1839362707
       ChatGPT Image Sep 16, 2025, 08_55_03 PM_3: -623273208
       ChatGPT Image Sep 16, 2025, 08_55_03 PM_4: 275422111
-      Gloves: 370293566
       Gold: -1600293040
       Gym: -1016192670
       Shield: -90091210
+      Stamina: 370293566
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

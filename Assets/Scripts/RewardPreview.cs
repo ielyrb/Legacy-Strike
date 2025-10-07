@@ -30,15 +30,17 @@ public class RewardPreview : MonoBehaviour
 
                 case RewardType.Shield:
                 _image.sprite = _shieldImage;
-                PlayerManager.Instance.AddResource(ResourceType.Shield, amount);
+                PlayerManager.Instance.AddResource(ResourceType.ShieldToken, amount);
                 break;
 
                 case RewardType.Attack:
+                PlayerManager.Instance.AddResource(ResourceType.AttackToken, amount);
                 _image.sprite = _attackImage;
                 loadBattleScene = true;
                 break;
 
                 case RewardType.Gym:
+                PlayerManager.Instance.AddResource(ResourceType.GymToken, amount);
                 _image.sprite = _gymImage;                
                 break;
 
@@ -48,6 +50,7 @@ public class RewardPreview : MonoBehaviour
                 break;
 
                 case RewardType.Arena:
+                PlayerManager.Instance.AddResource(ResourceType.ArenaToken, amount);
                 _image.sprite = _arenaImage;
                 break;
         }

@@ -27,8 +27,10 @@ public class BuildingItem : MonoBehaviour
 
     private void Initialize(int _level)
     {
+        
+
         level = _level;
-        upgradeCost = _upgradeCostList[level];
+        upgradeCost = level == 5 ? _upgradeCostList[4] : _upgradeCostList[level];
         UpdateUI();
         UpdateCrownsUI();
     }

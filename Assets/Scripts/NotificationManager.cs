@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class NotificationManager : MonoBehaviour
 {
@@ -9,9 +11,13 @@ public class NotificationManager : MonoBehaviour
 
     [SerializeField] private GameObject _canvas;
     [SerializeField] private TextMeshProUGUI _txt;
+    [SerializeField] private List<Sprite> icons;
+
+    [SerializeField] private ResourceUpdate _resourceUpdatePrefab;
 
     private Queue<string> _messageQueue = new Queue<string>();
-    private bool _isShowing = false;
+    private Dictionary<string, Sprite> spritesCollection = new Dictionary<string, Sprite>();
+    private bool _isMessageShowing = false;
 
     private void Awake()
     {
@@ -24,19 +30,31 @@ public class NotificationManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+        icons.ForEach(x => spritesCollection.Add(x.name, x));
+    }
+
+    public void ShowResourceUpdate(ResourceType type, int amount)
+    {
+        if (amount == 0)
+            return;
+
+        string key = type.ToString().Replace("Token","").Trim();
+        Sprite icon = spritesCollection.FirstOrDefault(x => x.Key == key).Value;
+        ResourceUpdate go = Instantiate(_resourceUpdatePrefab, _canvas.transform.parent);
+        go.Initialize(icon, amount);
     }
 
     public void ShowMessage(string message)
     {
         _messageQueue.Enqueue(message);
 
-        if (!_isShowing)
-            StartCoroutine(ProcessQueue());
+        if (!_isMessageShowing)
+            StartCoroutine(ProcessMessageQueue());
     }
 
-    private IEnumerator ProcessQueue()
+    private IEnumerator ProcessMessageQueue()
     {
-        _isShowing = true;
+        _isMessageShowing = true;
 
         while (_messageQueue.Count > 0)
         {
@@ -49,6 +67,6 @@ public class NotificationManager : MonoBehaviour
             _canvas.gameObject.SetActive(false);
         }
 
-        _isShowing = false;
+        _isMessageShowing = false;
     }
 }

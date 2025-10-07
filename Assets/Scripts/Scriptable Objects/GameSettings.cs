@@ -15,4 +15,9 @@ public class GameSettings : ScriptableObject
 
     public int fightBaseGoldReward = 1000;
     public int arenaWinMultiplier = 2;
+
+    public float glancingBlowChance = 25;
+
+    public int baseAttack = 1;
+    public int baseDefense = 1;
 }

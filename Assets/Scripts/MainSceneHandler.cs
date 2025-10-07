@@ -23,6 +23,12 @@ public class MainSceneHandler : MonoBehaviour
     [SerializeField] private GameObject _diceUI;
     [SerializeField] private GameObject _buildingUI;
     [SerializeField] private GameObject _upgradeBuildingUI;
+    [SerializeField] private GameObject _statsUI;
+
+    [SerializeField] private GoldUpdateAnimation _goldUpdatePrefab;
+    [SerializeField] private Transform _goldUpdateParent;
+
+    [SerializeField] private StructureBuildingHandler _buildingHandler;
 
     private List<DiceRoll> _dice = new List<DiceRoll>();
     private List<int> _rollResults = new List<int>();
@@ -34,22 +40,31 @@ public class MainSceneHandler : MonoBehaviour
         PlayerManager.OnStaminaRechargeTimeUpdated += OnStaminaRechargeTimeUpdated;
         PlayerManager.OnStaminaUpdated += OnStaminaUpdated;
         PlayerManager.OnGoldUpdated += OnGoldUpdated;
-        PlayerManager.OnShieldsUpdated += OnShieldsUpdated;
         ChangeCameraState(true);
     }
     private void Start()
     {
         PlayerManager.Instance.StartResourceRecharge();
-        OnGoldUpdated();
+        OnGoldUpdated(true, 0);
         OnStaminaUpdated();
-        OnShieldsUpdated();
+        SetupBuildings();
     }
 
     #region Public Methods
 
-    public void StartRandomFight()
+    public void SetStatsUIState(bool value)
     {
-        LoadingScreenManager.Instance.LoadScene("Battle");
+        _statsUI.SetActive(value);
+    }
+
+    public void ShowInventory()
+    {
+        View.GetView<InventoryView>().ShowView();
+    }
+
+    public void ShowShop()
+    {
+        View.GetView<ShopViewUI>().ShowView();
     }
 
     public void UpgradeBuildings()
@@ -102,6 +117,31 @@ public class MainSceneHandler : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Space))
             StartRandomFight();
+    }
+
+    private void UpdateGoldAmount(bool add, int amount)
+    {
+        if (amount == 0)
+            return;
+
+        GoldUpdateAnimation prefab = Instantiate(_goldUpdatePrefab, _goldUpdateParent);
+        prefab.Init(add, amount);
+    }
+
+    private void StartRandomFight()
+    {
+        LoadingScreenManager.Instance.LoadScene("Battle");
+    }
+
+    private void SetupBuildings()
+    {
+        foreach (KeyValuePair<BuildingType, int> kvp in PlayerManager.Instance.player.buildings)
+        {
+            if (kvp.Value > 0)
+            {
+                _buildingHandler.InitializeBuilding(kvp.Key, kvp.Value);
+            }
+        }
     }
 
     private void ChangeUIState(bool useDiceUI)
@@ -225,24 +265,15 @@ public class MainSceneHandler : MonoBehaviour
         tmp_diceRollTimer.SetText(formattedTime);
     }
 
-    void OnShieldsUpdated()
-    {
-        int shields = PlayerManager.Instance.GetResource(ResourceType.Shield);
-
-        for (int i = 0; i < _shieldsIcon.Count; i++)
-        {
-            _shieldsIcon[i].SetActive(i < shields);
-        }
-    }
-
     public void OnStaminaUpdated()
     {
         tmp_diceRoll.SetText($"{PlayerManager.Instance.GetResource(ResourceType.Stamina)}/{PlayerManager.Instance.maxStamina}");
     }
 
-    void OnGoldUpdated()
+    void OnGoldUpdated(bool add, int amount)
     {
         tmp_gold.SetText(PlayerManager.Instance.GetResource(ResourceType.Gold).ToString("N0"));
+        //UpdateGoldAmount(add, amount);
     }
     #endregion
 

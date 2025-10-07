@@ -12,6 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: adb1f784d4f676a4f8f3941257833b0a, type: 3}
   m_Name: Game Settings
   m_EditorClassIdentifier: 
-  maxRolls: 20
-  rollRechargeAmount: 5
-  rollRechargeTime: 60
+  baseStamina: 20
+  staminaRechargeAmount: 5
+  baseStaminaRechargeTime: 60
+  gymStaminaMultiplier: 2
+  gymRechargeTimeMultiplier: 10
+  arenaAttackMultiplier: 1
+  arenaDefenseMultiplier: 1
+  fightBaseGoldReward: 1000
+  arenaWinMultiplier: 2
+  glancingBlowChance: 25

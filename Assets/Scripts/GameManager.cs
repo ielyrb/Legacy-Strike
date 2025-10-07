@@ -22,7 +22,7 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        attacker = PlayerManager.Instance._playerStats;
+        attacker = PlayerManager.Instance.player.stats;
         defender = new Stats();
     }
 }

@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -22,6 +23,20 @@ public class StructureBuildingHandler : MonoBehaviour
         _sceneHandler = FindObjectOfType<MainSceneHandler>();
     }
 
+    public void InitializeBuilding(BuildingType building, int level)
+    {
+        GameObject camera = _arenaCamera;
+        GameObject prefab = _arenaPrefab;
+        Transform prefabPos = _arenaPosition;
+        if (building == BuildingType.Gym)
+        {
+            prefab = _gymPrefab;
+            camera = _gymCamera;
+            prefabPos = _gymPosition;
+        }
+        Instantiate(prefab, prefabPos);
+    }
+
     public void UpgradeBuilding(BuildingType building, int level, string message)
     {
         StartCoroutine(CreateStructure(building, level, message));
@@ -36,6 +51,7 @@ public class StructureBuildingHandler : MonoBehaviour
         Transform prefabPos = _arenaPosition;
         if (building == BuildingType.Gym)
         {
+            prefab = _gymPrefab;
             fxPos = _gymPosition;
             camera = _gymCamera;
             prefabPos = _gymPosition;
@@ -60,5 +76,7 @@ public class StructureBuildingHandler : MonoBehaviour
         camera.SetActive(false);
         if (building == BuildingType.Gym)
             _sceneHandler.OnStaminaUpdated();
+        PlayerManager.Instance.player.buildings[building] = level;
+        PlayerManager.Instance.Save();
     }
 }
