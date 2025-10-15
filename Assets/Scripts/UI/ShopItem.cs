@@ -10,7 +10,11 @@ public class ShopItem : MonoBehaviour
     [SerializeField] TextMeshProUGUI _txtAmount;
 
     [SerializeField] private Image _image;
+    [SerializeField] private Sprite _gymIcon;
     [SerializeField] private Sprite _goldIcon;
+    [SerializeField] private Sprite _arenaIcon;
+    [SerializeField] private Sprite _attackIcon;
+    [SerializeField] private Sprite _shieldIcon;
     [SerializeField] private Sprite _staminaIcon;
 
     private void Awake()
@@ -20,7 +24,13 @@ public class ShopItem : MonoBehaviour
 
     private void Start()
     {
-        _image.sprite = type == ResourceType.Gold ? _goldIcon : _staminaIcon;
+        _image.sprite = 
+            type == ResourceType.GymToken ? _gymIcon :
+            type == ResourceType.Gold ? _goldIcon : 
+            type == ResourceType.ArenaToken ? _arenaIcon :
+            type == ResourceType.AttackToken ? _attackIcon :
+            type == ResourceType.ShieldToken ? _shieldIcon :
+            _staminaIcon;
         _txtAmount.SetText($"x{amount}");
     }
 

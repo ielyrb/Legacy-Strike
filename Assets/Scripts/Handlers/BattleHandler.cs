@@ -1,16 +1,32 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class BattleHandler : MonoBehaviour
 {
+    [Header("Text Results")]
+    [SerializeField] TextMeshProUGUI _crit;
+    [SerializeField] TextMeshProUGUI _result;
+    [SerializeField] TextMeshProUGUI _reward;
+
+    [Header("Attack BUttons")]
+    [SerializeField] private Button _jab;
+    [SerializeField] private Button _hook;
+    [SerializeField] private Button _uppercut;
+
+    [Header("Defense Buttons")]
+    [SerializeField] private Button _parry;
+    [SerializeField] private Button _catch;
+    [SerializeField] private Button _roll;
+
     private AttackType _attackType;
     private DefenseType _defenseType;
 
     private Stats _attacker;
     private Stats _defender;
-
-    private bool _attackSet;
 
     private static readonly Dictionary<(AttackType, DefenseType), FightResult> _fightMatrix =
         new Dictionary<(AttackType, DefenseType), FightResult>
@@ -44,9 +60,7 @@ public class BattleHandler : MonoBehaviour
     public void SetAttackType(int value)
     {
         _attackType = (AttackType)value;
-        _attackSet = true;
-        //NotificationManager.Instance.ShowMessage($"Attack type set to {_attackType}");
-        StartFight();
+        StartCoroutine(StartFight());
     }
 
     public void SetupPlayers(Stats attacker, Stats defender)
@@ -56,17 +70,12 @@ public class BattleHandler : MonoBehaviour
         _defenseType = (DefenseType)Random.Range(0, 3);
     }
 
-    public void StartFight()
+    IEnumerator StartFight()
     {
-        if(!_attackSet)
-        {
-            NotificationManager.Instance.ShowMessage("Select an attack type first");
-            return;
-        }
-
         FightResult res = FightResult.DefenderWins;
         bool glancingBlow = false;
-        int damage = OnStartFight(out res, out glancingBlow);
+        bool crit = false;
+        int damage = OnStartFight(out res, out crit, out glancingBlow);
         int reward = 0;
 
         if (damage > 0)
@@ -75,63 +84,64 @@ public class BattleHandler : MonoBehaviour
             reward = Mathf.RoundToInt(res == FightResult.PartialHit ? reward / 2 : reward);
         }
 
-        switch (res)
+        _jab.interactable = _attackType == AttackType.Jab;
+        _hook.interactable = _attackType == AttackType.Hook;
+        _uppercut.interactable = _attackType == AttackType.Uppercut;
+        _parry.interactable = _defenseType == DefenseType.Parry;
+        _catch.interactable = _defenseType == DefenseType.Catch;
+        _roll.interactable = _defenseType == DefenseType.Roll;
+
+        yield return new WaitForSeconds(.5f);
+
+        if (crit)
         {
-            case FightResult.PartialHit:
-                if (glancingBlow)
-                {
-                    NotificationManager.Instance.ShowMessage($"Glancing Blow! Defender used {_defenseType} attacker used {_attackType}. Partial damage taken and won {reward}");
-                }
-                else
-                {
-                    NotificationManager.Instance.ShowMessage($"Mismatch! Defender used {_defenseType} but attacker used {_attackType}. Partial damage taken and won {reward}");
-                }
-                break;
-
-            case FightResult.FullHit:
-                int rand = Random.Range(0, 100);
-                bool crit = PlayerManager.Instance.player.stats.critChance >= 100 - rand;
-                if (crit)
-                {
-                    NotificationManager.Instance.ShowMessage($"Attacker's {_attackType} landed clean! Defender failed with {_defenseType} and won {reward}!");
-                }
-                else
-                {
-                    NotificationManager.Instance.ShowMessage($"Attacker's {_attackType} landed clean! Defender failed with {_defenseType} and won {reward}!");
-                }
-                break;
-
-            default:
-                NotificationManager.Instance.ShowMessage($"Defender successfully blocked {_attackType} with {_defenseType}!");
-                break;
+            _crit.SetText("Critical Hit!");
+            _crit.gameObject.SetActive(true);
         }
+        else if (glancingBlow)
+        {
+            _crit.SetText("Glancing Blow!");
+            _crit.gameObject.SetActive(true);
+        }
+
+        _result.SetText($"{AddSpaces(res.ToString())}");
+        _reward.SetText($"{reward.ToString("N0")} Gold");
+        _result.gameObject.SetActive(true);
+        _reward.gameObject.SetActive(true);
+
         PlayerManager.Instance.AddResource(ResourceType.Gold, reward);
+        yield return new WaitForSeconds(2f);
         StartCoroutine(ExitScene());
     }
 
     IEnumerator ExitScene()
     {
-        yield return new WaitForSeconds(2.5f);
+        yield return new WaitForSeconds(0.5f);
         LoadingScreenManager.Instance.LoadScene("Main");
     }
 
-    public int OnStartFight(out FightResult res, out bool glancingBlow)
+    public int OnStartFight(out FightResult res, out bool crit, out bool glancingBlow)
     {
         int damage = 0;
         res = GetFightResult();
+        crit = false;
         glancingBlow = false;
         switch (res)
         {
             case FightResult.PartialHit:
-                int rand = Random.Range(0, 100);
+                int randGlance = Random.Range(0, 100);
                 //glancingBlow = GameManager.Instance.settings.glancingBlowChance >= 100 - rand;
-                glancingBlow = PlayerManager.Instance.glancingBlowChance >= 100 - rand;
+                glancingBlow = PlayerManager.Instance.glancingBlowChance >= 100 - randGlance;
                 int attackPower = glancingBlow ? _attacker.attack : _attacker.attack / 2;
                 damage = Mathf.Max(1, attackPower - _defender.defense);
                 break;
 
             case FightResult.FullHit:
                 damage = Mathf.Max(1, _attacker.attack - _defender.defense);
+                int randCrit = Random.Range(0, 100);
+                crit = PlayerManager.Instance.player.stats.critChance >= 100 - randCrit;
+                if (crit)
+                    damage *= 2;
                 break;
         }
 
@@ -141,6 +151,15 @@ public class BattleHandler : MonoBehaviour
     public FightResult GetFightResult()
     {
         return _fightMatrix[(_attackType, _defenseType)];
+    }
+
+    public string AddSpaces(string camelCaseString)
+    {
+        if (string.IsNullOrEmpty(camelCaseString))
+        {
+            return camelCaseString;
+        }
+        return Regex.Replace(camelCaseString, "([A-Z])", " $1").Trim();
     }
 
 }

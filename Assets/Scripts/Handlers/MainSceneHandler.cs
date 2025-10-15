@@ -4,10 +4,10 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using Cinemachine;
+using UnityEngine.SceneManagement;
 
 public class MainSceneHandler : MonoBehaviour
 {
-    [SerializeField] private RewardPreview _rewardPreview;
     [SerializeField] private TextMeshProUGUI tmp_gold;
     [SerializeField] private TextMeshProUGUI tmp_diceRoll;
     [SerializeField] private TextMeshProUGUI tmp_diceRollTimer;
@@ -19,14 +19,9 @@ public class MainSceneHandler : MonoBehaviour
     [SerializeField] private CinemachineVirtualCamera _mainCamera;
     [SerializeField] private CinemachineVirtualCamera _diceRollCamera;
 
-    [SerializeField] private List<GameObject> _shieldsIcon;
     [SerializeField] private GameObject _diceUI;
     [SerializeField] private GameObject _buildingUI;
     [SerializeField] private GameObject _upgradeBuildingUI;
-    [SerializeField] private GameObject _statsUI;
-
-    [SerializeField] private GoldUpdateAnimation _goldUpdatePrefab;
-    [SerializeField] private Transform _goldUpdateParent;
 
     [SerializeField] private StructureBuildingHandler _buildingHandler;
 
@@ -52,14 +47,14 @@ public class MainSceneHandler : MonoBehaviour
 
     #region Public Methods
 
-    public void SetStatsUIState(bool value)
+    public void ShowStats()
     {
-        _statsUI.SetActive(value);
+        View.GetView<StatsViewUI>().ShowView();
     }
 
     public void ShowInventory()
     {
-        View.GetView<InventoryView>().ShowView();
+        View.GetView<InventoryViewUI>().ShowView();
     }
 
     public void ShowShop()
@@ -119,15 +114,6 @@ public class MainSceneHandler : MonoBehaviour
             StartRandomFight();
     }
 
-    private void UpdateGoldAmount(bool add, int amount)
-    {
-        if (amount == 0)
-            return;
-
-        GoldUpdateAnimation prefab = Instantiate(_goldUpdatePrefab, _goldUpdateParent);
-        prefab.Init(add, amount);
-    }
-
     private void StartRandomFight()
     {
         LoadingScreenManager.Instance.LoadScene("Battle");
@@ -179,12 +165,14 @@ public class MainSceneHandler : MonoBehaviour
             int face = d1;
 
             int amount = 2;
-            RewardType reward = GetReward(face);
+            ResourceType reward = GetReward(face);
 
-            if (reward == RewardType.Gold)
+            if (reward == ResourceType.Gold)
                 amount = Random.Range(2500, 10000);
 
-            _rewardPreview.ShowReward(reward, amount);
+            PlayerManager.Instance.AddResource(reward, amount);
+            if (reward == ResourceType.AttackToken)
+                LoadingScreenManager.Instance.LoadScene("Battle");
             return;
         }
 
@@ -192,12 +180,14 @@ public class MainSceneHandler : MonoBehaviour
         {
             int face = counts.First(x => x.Value == 2).Key;
             int amount = 1;
-            RewardType reward = GetReward(face);
+            ResourceType reward = GetReward(face);
 
-            if(reward == RewardType.Gold)
+            if(reward == ResourceType.Gold)
                 amount = Random.Range(5000, 20000);
 
-            _rewardPreview.ShowReward(reward, amount);
+            PlayerManager.Instance.AddResource(reward, amount);
+            if (reward == ResourceType.AttackToken)
+                LoadingScreenManager.Instance.LoadScene("Battle");
             return;
         }
 
@@ -205,20 +195,20 @@ public class MainSceneHandler : MonoBehaviour
         foreach (int value in _rollResults)
             gold += 100 * value;
 
-        _rewardPreview.ShowReward(RewardType.Gold, gold);        
+        PlayerManager.Instance.AddResource(ResourceType.Gold, gold);
     }
 
-    private RewardType GetReward(int face)
+    private ResourceType GetReward(int face)
     {
         switch (face)
         {
-            case 6: return RewardType.Attack;
-            case 5: return RewardType.Arena;
-            case 4: return RewardType.Shield;
-            case 3: return RewardType.Gym;
-            case 2: return RewardType.Gloves;
-            case 1: return RewardType.Gold;
-            default: return RewardType.Gold;
+            case 6: return ResourceType.AttackToken;
+            case 5: return ResourceType.ArenaToken;
+            case 4: return ResourceType.ShieldToken;
+            case 3: return ResourceType.GymToken;
+            case 2: return ResourceType.Stamina;
+            case 1: return ResourceType.Gold;
+            default: return ResourceType.Gold;
         }
     }
     #endregion

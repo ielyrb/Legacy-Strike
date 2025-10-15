@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 1666000753870707202}
   - component: {fileID: 4689643154743844343}
   - component: {fileID: 2829309124083214022}
+  - component: {fileID: 6628577039547086779}
   m_Layer: 0
   m_Name: Button
   m_TagString: Untagged
@@ -121,6 +122,18 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6628577039547086779
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1929709677112878160}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b1645cab9e044b42a320f87b166c988, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2505587020293664416
 GameObject:
   m_ObjectHideFlags: 0
@@ -155,10 +168,10 @@ RectTransform:
   - {fileID: 7943455312473423158}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 250, y: 350}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &7991006829127754364
 MonoBehaviour:
@@ -177,7 +190,11 @@ MonoBehaviour:
   button: {fileID: 2829309124083214022}
   _txtAmount: {fileID: 1045182588431700365}
   _image: {fileID: 7338304663529430712}
+  _gymIcon: {fileID: -1016192670, guid: c05e064104ca5c945a09ae529851a994, type: 3}
   _goldIcon: {fileID: 21300000, guid: f006fefa36c36494598f35b6bdac9d2d, type: 2}
+  _arenaIcon: {fileID: 1369561912, guid: c05e064104ca5c945a09ae529851a994, type: 3}
+  _attackIcon: {fileID: 21300000, guid: 7057e71cbcb5b9b4189c920211e88ff3, type: 3}
+  _shieldIcon: {fileID: -90091210, guid: c05e064104ca5c945a09ae529851a994, type: 3}
   _staminaIcon: {fileID: 370293566, guid: c05e064104ca5c945a09ae529851a994, type: 3}
 --- !u!1 &4469496850774515207
 GameObject:
@@ -529,7 +546,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Buy
+  m_text: $4.99
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 5302535af1044152a457ed104f1f4b91, type: 2}
   m_sharedMaterial: {fileID: 2164040, guid: 5302535af1044152a457ed104f1f4b91, type: 2}
